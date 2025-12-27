@@ -14,6 +14,9 @@ public class Product {
     }
 
     public void updateStock(int newStock) {
+        if (stock < 0) {
+            throw new IllegalArgumentException("Stock cannot be negative");
+        }
         this.stock = newStock;
     }
 

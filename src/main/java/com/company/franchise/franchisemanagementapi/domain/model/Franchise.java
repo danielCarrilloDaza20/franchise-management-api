@@ -29,4 +29,38 @@ public class Franchise {
     public List<Branch> getBranches() {
         return branches;
     }
+
+    public void addProductToBranch(String branchId, Product product) {
+        Branch branch = branches.stream().filter(b -> b.getId().toString().equals(branchId))
+                .findFirst()
+                .orElseThrow(() -> {
+                    return new IllegalStateException("Branch " + branchId + " not found");
+                });
+
+        branch.addProduct(product);
+    }
+
+    public void updateProductStock(String branchId, String productId, int stock) {
+        Branch branch = branches.stream()
+                .filter(b -> b.getId().toString().equals(branchId))
+                .findFirst()
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Branch " + branchId + " not found")
+                );
+
+        branch.updateProductStock(productId, stock);
+    }
+
+    public List<TopProductByBranch> getTopStockProductsByBranch() {
+        return branches.stream()
+                .map(branch -> {
+                    Product topProduct = branch.getTopStockProduct();
+                    return new TopProductByBranch(
+                            branch.getId().toString(),
+                            branch.getName(),
+                            topProduct
+                    );
+                })
+                .toList();
+    }
 }
