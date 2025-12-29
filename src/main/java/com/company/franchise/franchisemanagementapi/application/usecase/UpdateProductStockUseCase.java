@@ -1,8 +1,10 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
 import com.company.franchise.franchisemanagementapi.domain.port.FranchiseRepository;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+@Service
 public class UpdateProductStockUseCase {
 
     private final FranchiseRepository repository;
