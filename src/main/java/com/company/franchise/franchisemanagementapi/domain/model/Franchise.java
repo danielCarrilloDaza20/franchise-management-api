@@ -63,4 +63,15 @@ public class Franchise {
                 })
                 .toList();
     }
+
+    public void removeProductFromBranch(UUID branchId, UUID productId) {
+        Branch branch = branches.stream()
+                .filter(b -> b.getId().equals(branchId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Branch " + branchId + " not found"
+                ));
+
+        branch.removeProduct(productId);
+    }
 }

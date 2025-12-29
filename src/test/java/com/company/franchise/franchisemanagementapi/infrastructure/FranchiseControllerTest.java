@@ -44,6 +44,9 @@ class FranchiseControllerTest {
     @MockitoBean
     private GetTopStockProductsByFranchiseUseCase getTopStockProductsByFranchiseUseCase;
 
+    @MockitoBean
+    private RemoveProductFromBranchUseCase removeProductFromBranchUseCase;
+
     @Test
     void shouldCreateFranchise() {
         CreateFranchiseRequest request =
@@ -151,6 +154,22 @@ class FranchiseControllerTest {
                 .jsonPath("$[1].branchName").isEqualTo("Branch B")
                 .jsonPath("$[1].productName").isEqualTo("Mouse")
                 .jsonPath("$[1].stock").isEqualTo(20);
+    }
+
+    @Test
+    void shouldRemoveProductFromBranch() {
+        when(removeProductFromBranchUseCase.execute(
+                anyString(), anyString(), anyString()))
+                .thenReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri("/franchises/{fId}/branches/{bId}/products/{pId}",
+                        "f1", "b1", "p1")
+                .exchange()
+                .expectStatus().isNoContent();
+
+        verify(removeProductFromBranchUseCase)
+                .execute("f1", "b1", "p1");
     }
 
 }

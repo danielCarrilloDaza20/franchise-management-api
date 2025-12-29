@@ -20,6 +20,7 @@ public class FranchiseController {
     private final AddProductToBranchUseCase addProductToBranchUseCase;
     private final UpdateProductStockUseCase updateProductStockUseCase;
     private final GetTopStockProductsByFranchiseUseCase getTopStockProductsByFranchiseUseCase;
+    private final RemoveProductFromBranchUseCase removeProductFromBranchUseCase;
 
     @PostMapping
     public Mono<ResponseEntity<Void>> createFranchise(
@@ -81,5 +82,22 @@ public class FranchiseController {
                 )
                 .map(ResponseEntity::ok);
     }
+
+    @DeleteMapping(
+            "/{franchiseId}/branches/{branchId}/products/{productId}"
+    )
+    public Mono<ResponseEntity<Void>> removeProduct(
+            @PathVariable String franchiseId,
+            @PathVariable String branchId,
+            @PathVariable String productId
+    ) {
+        return removeProductFromBranchUseCase.execute(
+                        franchiseId,
+                        branchId,
+                        productId
+                )
+                .thenReturn(ResponseEntity.noContent().build());
+    }
+
 }
 

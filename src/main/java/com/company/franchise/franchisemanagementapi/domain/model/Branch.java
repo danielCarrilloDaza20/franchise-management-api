@@ -50,4 +50,16 @@ public class Branch {
                 );
     }
 
+    public void removeProduct(UUID productId) {
+        boolean removed = products.removeIf(
+                product -> product.getId().equals(productId)
+        );
+
+        if (!removed) {
+            throw new IllegalStateException(
+                    "Product " + productId + " not found in branch " + id
+            );
+        }
+    }
+
 }
