@@ -1,0 +1,353 @@
+{
+	"info": {
+		"_postman_id": "6e961590-8e14-4b77-b889-99d32e5838d5",
+		"name": "franchise-management-api",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34856163"
+	},
+	"item": [
+		{
+			"name": "01 - Create Franchise",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Another\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/franchises",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises"
+					]
+				},
+				"description": "Generated from cURL: curl -X POST http://localhost:8080/franchises \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\r\n    \"name\": \"Tech Franchise\"\r\n  }'\r\n"
+			},
+			"response": []
+		},
+		{
+			"name": "02 - Find Franchises",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/franchises",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "03 - Create Branch",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Another Branch\"\r\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/franchises/{{franchiseId}}/branches",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises",
+						"{{franchiseId}}",
+						"branches"
+					]
+				},
+				"description": "Generated from cURL: curl -X POST http://localhost:8080/franchises \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\r\n    \"name\": \"Tech Franchise\"\r\n  }'\r\n"
+			},
+			"response": []
+		},
+		{
+			"name": "04 - Create Product",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\":\"Another branch Product\",\r\n    \"stock\": 20\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/franchises/{{franchiseId}}/branches/{{branchId}}/products",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises",
+						"{{franchiseId}}",
+						"branches",
+						"{{branchId}}",
+						"products"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "05 - Delete Product",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises",
+						"{{franchiseId}}",
+						"branches",
+						"{{branchId}}",
+						"products",
+						"{{productId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "06 - Update Product Stock",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"stock\":15\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}/stock",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises",
+						"{{franchiseId}}",
+						"branches",
+						"{{branchId}}",
+						"products",
+						"{{productId}}",
+						"stock"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "07 - Get top Stock By Branch",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/franchises/{{franchiseId}}/products/top-stock",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises",
+						"{{franchiseId}}",
+						"products",
+						"top-stock"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "08 - Update Franchise Name",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\":\"New Final Franchise Test Name\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/franchises/{{franchiseId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises",
+						"{{franchiseId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "09 - Update Branch Name",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\":\"New Branch Final Name\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/franchises/{{franchiseId}}/branches/{{branchId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises",
+						"{{franchiseId}}",
+						"branches",
+						"{{branchId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "10 - Update Product Name",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\":\"New final Product Name\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/franchises/{{franchiseId}}/branches/{{branchId}}/products/{{productId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"franchises",
+						"{{franchiseId}}",
+						"branches",
+						"{{branchId}}",
+						"products",
+						"{{productId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://18.216.126.187:8080"
+		}
+	]
+}
