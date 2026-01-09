@@ -9,44 +9,55 @@ import com.company.franchise.franchisemanagementapi.infrastructure.out.persisten
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class FranchisePersistenceMapper {
-
-    /* =========================
-       DOMAIN <- ENTITY
-       ========================= */
 
     public Franchise toDomainFranchise(
             FranchiseEntity entity,
             List<Branch> branches
     ) {
-        Franchise franchise = new Franchise(
+        return new Franchise(
                 entity.getId(),
-                entity.getName()
+                entity.getName(),
+                branches
         );
+    }
 
-        branches.forEach(franchise::addBranch);
-        return franchise;
+    public Franchise toDomainFranchiseWithoutBranches(
+            FranchiseEntity entity
+    ) {
+        return new Franchise(
+                entity.getId(),
+                entity.getName(),
+                List.of()
+        );
     }
 
     public Branch toDomainBranch(
             BranchEntity entity,
-            List<ProductEntity> productEntities
+            List<Product> products
     ) {
         Branch branch = new Branch(
                 entity.getId(),
                 entity.getName()
         );
 
-        productEntities.stream()
-                .map(this::toDomainProduct)
-                .forEach(branch::addProduct);
+        products.forEach(branch::addProduct);
 
         return branch;
     }
 
-    private Product toDomainProduct(ProductEntity entity) {
+    public FranchiseEntity toEntity(Franchise franchise) {
+        return new FranchiseEntity(
+                franchise.getId(),
+                franchise.getName(),
+                null
+        );
+    }
+
+    public Product toDomainProduct(ProductEntity entity) {
         return new Product(
                 entity.getId(),
                 entity.getName(),
@@ -54,44 +65,45 @@ public class FranchisePersistenceMapper {
         );
     }
 
-    /* =========================
-       ENTITY <- DOMAIN
-       ========================= */
+    public List<BranchEntity> toBranchEntities(Franchise franchise) {
+        return franchise.getBranches()
+                .stream()
+                .map(branch -> new BranchEntity(
+                        branch.getId(),
+                        franchise.getId(),
+                        branch.getName()
+                ))
+                .toList();
+    }
 
-    public FranchiseEntity toEntity(Franchise domain) {
-        return new FranchiseEntity(
-                domain.getId(),
-                domain.getName()
+
+    public List<ProductEntity> toProductEntities(Franchise franchise) {
+        return franchise.getBranches()
+                .stream()
+                .flatMap(branch ->
+                        branch.getProducts()
+                                .stream()
+                                .map(product -> new ProductEntity(
+                                        product.getId(),
+                                        branch.getId(),
+                                        product.getName(),
+                                        product.getStock()
+                                ))
+                )
+                .toList();
+    }
+
+    public BranchEntity toBranchEntity(Branch branch, UUID franchiseId) {
+        if (branch == null) return null;
+        return new BranchEntity(
+                branch.getId(),
+                franchiseId,
+                branch.getName()
         );
     }
 
-    public List<BranchEntity> toBranchEntities(Franchise domain) {
-        return domain.getBranches().stream()
-                .map(branch ->
-                        new BranchEntity(
-                                branch.getId(),
-                                branch.getName(),
-                                domain.getId()
-                        )
-                )
-                .toList();
-    }
 
-    public List<ProductEntity> toProductEntities(Franchise domain) {
-        return domain.getBranches().stream()
-                .flatMap(branch ->
-                        branch.getProducts().stream()
-                                .map(product ->
-                                        new ProductEntity(
-                                                product.getId(),
-                                                product.getName(),
-                                                product.getStock(),
-                                                branch.getId()
-                                        )
-                                )
-                )
-                .toList();
-    }
 }
+
 
 

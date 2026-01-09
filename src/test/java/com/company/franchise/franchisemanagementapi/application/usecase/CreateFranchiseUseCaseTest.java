@@ -3,11 +3,12 @@ package com.company.franchise.franchisemanagementapi.application.usecase;
 import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
 import com.company.franchise.franchisemanagementapi.domain.port.FranchiseRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -24,10 +25,11 @@ class CreateFranchiseUseCaseTest {
     }
 
     @Test
-    void shouldCreateAndSaveFranchise() {
+    @DisplayName("Debe invocar el método create del repositorio al generar una nueva franquicia")
+    void shouldCreateFranchiseSuccessfully() {
         String franchiseName = "Test Franchise";
 
-        when(repository.save(any(Franchise.class)))
+        when(repository.create(any(Franchise.class)))
                 .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
         Mono<Franchise> result = useCase.execute(franchiseName);
@@ -35,15 +37,13 @@ class CreateFranchiseUseCaseTest {
         StepVerifier.create(result)
                 .assertNext(franchise -> {
                     assertNotNull(franchise);
-                    assertNotNull(franchise.getId());
+                    assertEquals(franchiseName, franchise.getName());
+                    assertNotNull(franchise.getId()); // El dominio ya le puso ID
                 })
                 .verifyComplete();
 
-        ArgumentCaptor<Franchise> captor = ArgumentCaptor.forClass(Franchise.class);
-        verify(repository, times(1)).save(captor.capture());
+        verify(repository, times(1)).create(any(Franchise.class));
 
-        Franchise savedFranchise = captor.getValue();
-        assertNotNull(savedFranchise.getId());
     }
 }
 

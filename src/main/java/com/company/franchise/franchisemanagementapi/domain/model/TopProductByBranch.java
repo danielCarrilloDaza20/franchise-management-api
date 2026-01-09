@@ -1,5 +1,8 @@
 package com.company.franchise.franchisemanagementapi.domain.model;
 
+import lombok.Data;
+
+@Data
 public class TopProductByBranch {
     private final String branchId;
     private final String branchName;
@@ -11,15 +14,4 @@ public class TopProductByBranch {
         this.product = product;
     }
 
-    public String getBranchId() {
-        return branchId;
-    }
-
-    public String getBranchName() {
-        return branchName;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
 }

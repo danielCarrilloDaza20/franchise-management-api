@@ -7,6 +7,8 @@ import com.company.franchise.franchisemanagementapi.infrastructure.out.persisten
 import com.company.franchise.franchisemanagementapi.infrastructure.out.persistence.repository.BranchR2dbcRepository;
 import com.company.franchise.franchisemanagementapi.infrastructure.out.persistence.repository.FranchiseR2dbcRepository;
 import com.company.franchise.franchisemanagementapi.infrastructure.out.persistence.repository.ProductR2dbcRepository;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -20,28 +22,45 @@ public class FranchiseRepositoryAdapter implements FranchiseRepository {
     private final BranchR2dbcRepository branchRepository;
     private final ProductR2dbcRepository productRepository;
     private final FranchisePersistenceMapper mapper;
+    private final R2dbcEntityTemplate r2dbcEntityTemplate;
 
     public FranchiseRepositoryAdapter(
             FranchiseR2dbcRepository franchiseRepository,
             BranchR2dbcRepository branchRepository,
             ProductR2dbcRepository productRepository,
-            FranchisePersistenceMapper mapper
-    ) {
+            FranchisePersistenceMapper mapper,
+            R2dbcEntityTemplate r2dbcEntityTemplate) {
         this.franchiseRepository = franchiseRepository;
         this.branchRepository = branchRepository;
         this.productRepository = productRepository;
         this.mapper = mapper;
+        this.r2dbcEntityTemplate = r2dbcEntityTemplate;
     }
 
     @Override
-    public Mono<Franchise> findById(String id) {
-        UUID franchiseId = UUID.fromString(id);
-
-        return franchiseRepository.findById(franchiseId)
+    public Flux<Franchise> findAll(Pageable pageable) {
+        return franchiseRepository.findAllBy(pageable)
                 .flatMap(franchiseEntity ->
-                        branchRepository.findByFranchiseId(franchiseId)
+                        branchRepository.findByFranchiseId(franchiseEntity.getId())
                                 .flatMap(branchEntity ->
                                         productRepository.findByBranchId(branchEntity.getId())
+                                                .map(mapper::toDomainProduct)
+                                                .collectList()
+                                                .map(products -> mapper.toDomainBranch(branchEntity, products)))
+                                .collectList()
+                                .map(branches -> mapper.toDomainFranchise(franchiseEntity, branches)));
+
+    }
+
+    @Override
+    public Mono<Franchise> findById(UUID id) {
+
+        return franchiseRepository.findById(id)
+                .flatMap(franchiseEntity ->
+                        branchRepository.findByFranchiseId(id)
+                                .flatMap(branchEntity ->
+                                        productRepository.findByBranchId(branchEntity.getId())
+                                                .map(mapper::toDomainProduct)
                                                 .collectList()
                                                 .map(products ->
                                                         mapper.toDomainBranch(
@@ -61,43 +80,14 @@ public class FranchiseRepositoryAdapter implements FranchiseRepository {
     }
 
     @Override
-    public Mono<Franchise> save(Franchise franchise) {
+    public Mono<Franchise> create(Franchise franchise) {
 
-        FranchiseEntity franchiseEntity =
-                mapper.toEntity(franchise);
+        FranchiseEntity entity = mapper.toEntity(franchise);
 
-        return franchiseRepository.save(franchiseEntity)
-                .flatMap(savedFranchise ->
-                        branchRepository
-                                .deleteAll(
-                                        branchRepository
-                                                .findByFranchiseId(savedFranchise.getId())
-                                )
-                                .thenMany(
-                                        Flux.fromIterable(
-                                                mapper.toBranchEntities(franchise)
-                                        )
-                                )
-                                .flatMap(branchRepository::save)
-                                .collectList()
-                                .flatMap(savedBranches ->
-                                        productRepository
-                                                .deleteAll(
-                                                        productRepository
-                                                                .findAll()
-                                                )
-                                                .thenMany(
-                                                        Flux.fromIterable(
-                                                                mapper.toProductEntities(franchise)
-                                                        )
-                                                )
-                                                .flatMap(productRepository::save)
-                                                .then(
-                                                        findById(
-                                                                savedFranchise.getId().toString()
-                                                        )
-                                                )
-                                )
-                );
+        return r2dbcEntityTemplate.insert(FranchiseEntity.class)
+                .using(entity)
+                .map(mapper::toDomainFranchiseWithoutBranches);
     }
+
 }
+

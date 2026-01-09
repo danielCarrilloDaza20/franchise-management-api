@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/franchises")
@@ -32,7 +33,7 @@ public class FranchiseController {
 
     @PostMapping("/{franchiseId}/branches")
     public Mono<ResponseEntity<Void>> addBranch(
-            @PathVariable String franchiseId,
+            @PathVariable UUID franchiseId,
             @RequestBody AddBranchRequest request) {
 
         return addBranchToFranchiseUseCase
@@ -42,8 +43,8 @@ public class FranchiseController {
 
     @PostMapping("/{franchiseId}/branches/{branchId}/products")
     public Mono<ResponseEntity<Void>> addProduct(
-            @PathVariable String franchiseId,
-            @PathVariable String branchId,
+            @PathVariable UUID franchiseId,
+            @PathVariable UUID branchId,
             @RequestBody AddProductRequest request) {
 
         return addProductToBranchUseCase.execute(
@@ -57,9 +58,9 @@ public class FranchiseController {
 
     @PutMapping("/{franchiseId}/branches/{branchId}/products/{productId}/stock")
     public Mono<ResponseEntity<Void>> updateProductStock(
-            @PathVariable String franchiseId,
-            @PathVariable String branchId,
-            @PathVariable String productId,
+            @PathVariable UUID franchiseId,
+            @PathVariable UUID branchId,
+            @PathVariable UUID productId,
             @RequestBody UpdateProductStockRequest request) {
 
         return updateProductStockUseCase.execute(
@@ -73,7 +74,7 @@ public class FranchiseController {
 
     @GetMapping("/{franchiseId}/products/top-stock")
     public Mono<ResponseEntity<List<TopProductByBranchResponse>>> getTopStockProducts(
-            @PathVariable String franchiseId) {
+            @PathVariable UUID franchiseId) {
 
         return getTopStockProductsByFranchiseUseCase.execute(franchiseId)
                 .map(list -> list.stream()
@@ -87,9 +88,9 @@ public class FranchiseController {
             "/{franchiseId}/branches/{branchId}/products/{productId}"
     )
     public Mono<ResponseEntity<Void>> removeProduct(
-            @PathVariable String franchiseId,
-            @PathVariable String branchId,
-            @PathVariable String productId
+            @PathVariable UUID franchiseId,
+            @PathVariable UUID branchId,
+            @PathVariable UUID productId
     ) {
         return removeProductFromBranchUseCase.execute(
                         franchiseId,

@@ -1,68 +1,69 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
-import com.company.franchise.franchisemanagementapi.domain.model.Branch;
-import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
+import com.company.franchise.franchisemanagementapi.domain.exception.ProductNotFoundException;
 import com.company.franchise.franchisemanagementapi.domain.model.Product;
-import com.company.franchise.franchisemanagementapi.domain.port.FranchiseRepository;
+import com.company.franchise.franchisemanagementapi.domain.port.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-public class RemoveProductFromBranchUseCaseTest {
+class RemoveProductFromBranchUseCaseTest {
 
-    private FranchiseRepository repository;
+    private ProductRepository productRepository;
     private RemoveProductFromBranchUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        repository = mock(FranchiseRepository.class);
-        useCase = new RemoveProductFromBranchUseCase(repository);
+        productRepository = mock(ProductRepository.class);
+        useCase = new RemoveProductFromBranchUseCase(productRepository);
     }
 
     @Test
-    void shouldRemoveProductFromBranch() {
-        Franchise franchise = new Franchise(
-                UUID.randomUUID(), "Test Franchise"
-        );
+    @DisplayName("Debe eliminar un producto exitosamente si existe en la sucursal")
+    void shouldRemoveProductFromBranchSuccessfully() {
+        UUID franchiseId = UUID.randomUUID();
+        UUID branchId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
 
-        Branch branch = new Branch(
-                UUID.randomUUID(), "Main Branch"
-        );
+        Product product = new Product(productId, "Laptop", 10);
 
-        Product product = new Product(
-                UUID.randomUUID(), "Laptop", 10
-        );
+        when(productRepository.findById(branchId, productId))
+                .thenReturn(Mono.just(product));
 
-        branch.addProduct(product);
-        franchise.addBranch(branch);
+        when(productRepository.deleteById(branchId, productId))
+                .thenReturn(Mono.empty()); // delete habitualmente retorna Mono<Void>
 
-        when(repository.findById(anyString()))
-                .thenReturn(Mono.just(franchise));
-
-        when(repository.save(any(Franchise.class)))
-                .thenAnswer(invocation ->
-                        Mono.just(invocation.getArgument(0))
-                );
-
-        Mono<Void> result = useCase.execute(
-                franchise.getId().toString(),
-                branch.getId().toString(),
-                product.getId().toString()
-        );
+        Mono<Void> result = useCase.execute(franchiseId, branchId, productId);
 
         StepVerifier.create(result)
                 .verifyComplete();
 
-        assertTrue(branch.getProducts().isEmpty());
-        verify(repository).save(franchise);
+        verify(productRepository, times(1)).findById(branchId, productId);
+        verify(productRepository, times(1)).deleteById(branchId, productId);
+    }
+
+    @Test
+    @DisplayName("Debe lanzar error si el producto no existe en la sucursal")
+    void shouldReturnErrorWhenProductNotFound() {
+        UUID fId = UUID.randomUUID();
+        UUID bId = UUID.randomUUID();
+        UUID pId = UUID.randomUUID();
+
+        when(productRepository.findById(bId, pId)).thenReturn(Mono.empty());
+
+        Mono<Void> result = useCase.execute(fId, bId, pId);
+
+        StepVerifier.create(result)
+                .expectError(ProductNotFoundException.class)
+                .verify();
+
+        verify(productRepository, never()).deleteById(any(), any());
     }
 }
-

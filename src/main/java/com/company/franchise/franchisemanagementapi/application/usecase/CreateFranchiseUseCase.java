@@ -2,21 +2,17 @@ package com.company.franchise.franchisemanagementapi.application.usecase;
 
 import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
 import com.company.franchise.franchisemanagementapi.domain.port.FranchiseRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.UUID;
-
 @Service
+@RequiredArgsConstructor
 public class CreateFranchiseUseCase {
     private final FranchiseRepository repository;
 
-    public CreateFranchiseUseCase(FranchiseRepository repository) {
-        this.repository = repository;
-    }
-
     public Mono<Franchise> execute(String name) {
-        Franchise franchise = new Franchise(UUID.randomUUID(), name);
-        return repository.save(franchise);
+        Franchise franchise = new Franchise(name);
+        return repository.create(franchise);
     }
 }

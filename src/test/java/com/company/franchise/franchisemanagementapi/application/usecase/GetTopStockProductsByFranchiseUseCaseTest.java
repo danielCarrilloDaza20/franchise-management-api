@@ -1,11 +1,13 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
+import com.company.franchise.franchisemanagementapi.domain.exception.FranchiseNotFoundException;
 import com.company.franchise.franchisemanagementapi.domain.model.Branch;
 import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
 import com.company.franchise.franchisemanagementapi.domain.model.Product;
 import com.company.franchise.franchisemanagementapi.domain.model.TopProductByBranch;
 import com.company.franchise.franchisemanagementapi.domain.port.FranchiseRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -14,11 +16,10 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.*;
 
-public class GetTopStockProductsByFranchiseUseCaseTest {
+class GetTopStockProductsByFranchiseUseCaseTest {
 
     private FranchiseRepository repository;
     private GetTopStockProductsByFranchiseUseCase useCase;
@@ -30,8 +31,10 @@ public class GetTopStockProductsByFranchiseUseCaseTest {
     }
 
     @Test
+    @DisplayName("Debe retornar el producto con más stock por cada sucursal de la franquicia")
     void shouldReturnTopStockProductPerBranch() {
-        Franchise franchise = new Franchise(UUID.randomUUID(), "Test Franchise");
+        UUID franchiseId = UUID.randomUUID();
+        Franchise franchise = new Franchise(franchiseId, "Test Franchise");
 
         Branch branch1 = new Branch(UUID.randomUUID(), "Branch A");
         branch1.addProduct(new Product(UUID.randomUUID(), "Product A1", 10));
@@ -44,23 +47,44 @@ public class GetTopStockProductsByFranchiseUseCaseTest {
         franchise.addBranch(branch1);
         franchise.addBranch(branch2);
 
-        when(repository.findById(anyString()))
+        when(repository.findById(franchiseId))
                 .thenReturn(Mono.just(franchise));
 
-        Mono<List<TopProductByBranch>> result =
-                useCase.execute("franchise-id");
+        Mono<List<TopProductByBranch>> result = useCase.execute(franchiseId);
 
         StepVerifier.create(result)
                 .assertNext(list -> {
+                    assertNotNull(list);
                     assertEquals(2, list.size());
 
-                    assertEquals("Branch A", list.get(0).getBranchName());
-                    assertEquals(30, list.get(0).getProduct().getStock());
+                    TopProductByBranch topA = list.stream()
+                            .filter(t -> t.getBranchName().equals("Branch A"))
+                            .findFirst().orElseThrow();
+                    assertEquals("Product A2", topA.getProduct().getName());
+                    assertEquals(30, topA.getProduct().getStock());
 
-                    assertEquals("Branch B", list.get(1).getBranchName());
-                    assertEquals(20, list.get(1).getProduct().getStock());
+                    TopProductByBranch topB = list.stream()
+                            .filter(t -> t.getBranchName().equals("Branch B"))
+                            .findFirst().orElseThrow();
+                    assertEquals("Product B2", topB.getProduct().getName());
+                    assertEquals(20, topB.getProduct().getStock());
                 })
                 .verifyComplete();
+
+        verify(repository, times(1)).findById(franchiseId);
+    }
+
+    @Test
+    @DisplayName("Debe lanzar excepción si la franquicia no existe")
+    void shouldFailWhenFranchiseDoesNotExist() {
+        UUID franchiseId = UUID.randomUUID();
+        when(repository.findById(franchiseId)).thenReturn(Mono.empty());
+
+        Mono<List<TopProductByBranch>> result = useCase.execute(franchiseId);
+
+        StepVerifier.create(result)
+                .expectError(FranchiseNotFoundException.class)
+                .verify();
     }
 }
 

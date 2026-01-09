@@ -1,7 +1,10 @@
 package com.company.franchise.franchisemanagementapi.domain.model;
 
+import lombok.Data;
+
 import java.util.UUID;
 
+@Data
 public class Product {
     private final UUID id;
     private String name;
@@ -20,15 +23,4 @@ public class Product {
         this.stock = newStock;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getStock() {
-        return stock;
-    }
 }

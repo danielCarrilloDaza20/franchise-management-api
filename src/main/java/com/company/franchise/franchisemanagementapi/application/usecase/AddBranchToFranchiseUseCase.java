@@ -1,27 +1,32 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
+import com.company.franchise.franchisemanagementapi.domain.exception.FranchiseNotFoundException;
 import com.company.franchise.franchisemanagementapi.domain.model.Branch;
+import com.company.franchise.franchisemanagementapi.domain.port.BranchRepository;
 import com.company.franchise.franchisemanagementapi.domain.port.FranchiseRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class AddBranchToFranchiseUseCase {
-    private final FranchiseRepository repository;
+    private final FranchiseRepository franchiseRepository;
+    private final BranchRepository branchRepository;
 
-    public AddBranchToFranchiseUseCase(FranchiseRepository repository) {
-        this.repository = repository;
-    }
+    public Mono<Void> execute(UUID franchiseId, String branchName) {
+        return franchiseRepository.findById(franchiseId)
+                .switchIfEmpty(Mono.error(
+                        new FranchiseNotFoundException("Franchise not found: " + franchiseId)
+                ))
+                .flatMap(franchise -> {
+                    Branch branch = new Branch(UUID.randomUUID(), branchName);
 
-    public Mono<Void> execute(String franchiseId, String branchName){
-        return repository.findById(franchiseId)
-                .map( franchise -> {
-                    franchise.addBranch(new Branch(UUID.randomUUID(), branchName));
-                    return franchise;
+                    return branchRepository.create(branch, franchiseId)
+                            .doOnSuccess(franchise::addBranch);
                 })
-                .flatMap(repository::save)
                 .then();
     }
 }

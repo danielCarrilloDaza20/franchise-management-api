@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: franchise-management-api
+
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/franchise_db
+    username: postgres
+    password: admin
+
+  sql:
+    init:
+      mode: never
+
+logging:
+  level:
+    org.springframework.r2dbc: INFO
+    io.r2dbc.spi: INFO
