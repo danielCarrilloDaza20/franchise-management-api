@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -23,6 +24,7 @@ public class FranchiseEntity {
     private String name;
 
     @CreatedDate
+    @ReadOnlyProperty
     private LocalDateTime createdAt;
 
 }

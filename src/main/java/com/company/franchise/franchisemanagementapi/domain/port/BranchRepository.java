@@ -10,4 +10,6 @@ public interface BranchRepository {
     Mono<Branch> create(Branch branch, UUID franchiseId);
 
     Mono<Branch> findById(UUID franchiseId, UUID branchId);
+
+    Mono<Branch> update(Branch branch, UUID franchiseId);
 }

@@ -48,4 +48,11 @@ public class BranchRepositoryAdapter implements BranchRepository {
                 .map(products -> mapper.toDomainBranch(branchEntity, products));
     }
 
+    @Override
+    public Mono<Branch> update(Branch branch, UUID franchiseId) {
+        BranchEntity entity = mapper.toEntity(branch, franchiseId);
+
+        return branchR2dbcRepository.save(entity)
+                .map(mapper::toDomainBranchWithoutProducts);
+    }
 }

@@ -47,4 +47,8 @@ public class Franchise {
                 })
                 .toList();
     }
+
+    public void updateName(String newName) {
+        this.name = newName;
+    }
 }

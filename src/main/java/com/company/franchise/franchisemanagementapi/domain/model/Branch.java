@@ -37,4 +37,8 @@ public class Branch {
                 );
     }
 
+    public void updateName(String newName) {
+        this.name = newName;
+    }
+
 }

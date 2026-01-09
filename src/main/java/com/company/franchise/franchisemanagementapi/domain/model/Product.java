@@ -23,4 +23,8 @@ public class Product {
         this.stock = newStock;
     }
 
+    public void updateName(String newName) {
+        this.name = newName;
+    }
+
 }

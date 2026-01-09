@@ -22,6 +22,9 @@ public class FranchiseController {
     private final UpdateProductStockUseCase updateProductStockUseCase;
     private final GetTopStockProductsByFranchiseUseCase getTopStockProductsByFranchiseUseCase;
     private final RemoveProductFromBranchUseCase removeProductFromBranchUseCase;
+    private final UpdateFranchiseNameUseCase updateFranchiseNameUseCase;
+    private final UpdateBranchNameUseCase updateBranchNameUseCase;
+    private final UpdateProductNameUseCase updateProductNameUseCase;
 
     @PostMapping
     public Mono<ResponseEntity<Void>> createFranchise(
@@ -98,6 +101,36 @@ public class FranchiseController {
                         productId
                 )
                 .thenReturn(ResponseEntity.noContent().build());
+    }
+
+    @PutMapping("/{franchiseId}")
+    public Mono<ResponseEntity<Void>> updateFranchiseName(
+            @PathVariable UUID franchiseId,
+            @RequestBody UpdateFranchiseNameRequest request) {
+
+        return updateFranchiseNameUseCase.execute(franchiseId, request.getName())
+                .thenReturn(ResponseEntity.ok().build());
+    }
+
+    @PutMapping("/{franchiseId}/branches/{branchId}")
+    public Mono<ResponseEntity<Void>> updateBranchName(
+            @PathVariable UUID franchiseId,
+            @PathVariable UUID branchId,
+            @RequestBody UpdateBranchNameRequest request) {
+
+        return updateBranchNameUseCase.execute(franchiseId, branchId, request.getName())
+                .thenReturn(ResponseEntity.ok().build());
+    }
+
+    @PutMapping("/{franchiseId}/branches/{branchId}/products/{productId}")
+    public Mono<ResponseEntity<Void>> updateBranchName(
+            @PathVariable UUID franchiseId,
+            @PathVariable UUID branchId,
+            @PathVariable UUID productId,
+            @RequestBody UpdateProductNameRequest request) {
+
+        return updateProductNameUseCase.execute(branchId, productId, request.getName())
+                .thenReturn(ResponseEntity.ok().build());
     }
 
 }

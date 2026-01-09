@@ -89,5 +89,12 @@ public class FranchiseRepositoryAdapter implements FranchiseRepository {
                 .map(mapper::toDomainFranchiseWithoutBranches);
     }
 
+    @Override
+    public Mono<Franchise> update(Franchise franchise) {
+
+        FranchiseEntity entity = mapper.toEntity(franchise);
+        return franchiseRepository.save(entity)
+                .map(mapper::toDomainFranchiseWithoutBranches);
+    }
 }
 

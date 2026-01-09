@@ -10,8 +10,9 @@ import java.util.UUID;
 public interface FranchiseRepository {
     Mono<Franchise> create(Franchise franchise);
 
+    Mono<Franchise> update(Franchise franchise);
+
     Mono<Franchise> findById(UUID id);
 
     Flux<Franchise> findAll(Pageable pageable);
-
 }
