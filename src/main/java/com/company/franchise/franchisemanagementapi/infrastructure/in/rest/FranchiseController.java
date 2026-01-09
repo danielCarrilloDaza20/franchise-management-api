@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class FranchiseController {
     private final UpdateFranchiseNameUseCase updateFranchiseNameUseCase;
     private final UpdateBranchNameUseCase updateBranchNameUseCase;
     private final UpdateProductNameUseCase updateProductNameUseCase;
+    private final FindAllFranchisesUseCase findAllFranchisesUseCase;
 
     @PostMapping
     public Mono<ResponseEntity<Void>> createFranchise(
@@ -132,6 +134,15 @@ public class FranchiseController {
 
         return updateProductNameUseCase.execute(branchId, productId, request.getName())
                 .thenReturn(ResponseEntity.ok().build());
+    }
+
+    @GetMapping
+    public Flux<FranchiseResponse> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return findAllFranchisesUseCase.execute(page, size)
+                .map(FranchiseResponse::fromDomain);
     }
 
 }

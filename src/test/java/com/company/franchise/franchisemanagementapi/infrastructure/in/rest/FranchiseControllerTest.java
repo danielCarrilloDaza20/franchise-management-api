@@ -1,6 +1,7 @@
 package com.company.franchise.franchisemanagementapi.infrastructure.in.rest;
 
 import com.company.franchise.franchisemanagementapi.application.usecase.*;
+import com.company.franchise.franchisemanagementapi.domain.model.Branch;
 import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
 import com.company.franchise.franchisemanagementapi.domain.model.Product;
 import com.company.franchise.franchisemanagementapi.domain.model.TopProductByBranch;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -44,6 +46,8 @@ class FranchiseControllerTest {
     private UpdateBranchNameUseCase updateBranchNameUseCase;
     @MockitoBean
     private UpdateProductNameUseCase updateProductNameUseCase;
+    @MockitoBean
+    private FindAllFranchisesUseCase findAllFranchisesUseCase;
 
     private final UUID fId = UUID.randomUUID();
     private final UUID bId = UUID.randomUUID();
@@ -204,5 +208,34 @@ class FranchiseControllerTest {
                 .bodyValue(request)
                 .exchange()
                 .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void shouldReturnAllFranchises() {
+        UUID id = UUID.randomUUID();
+        Franchise franchise = new Franchise(id, "Franquicia Maestra");
+
+        Branch branch = new Branch(UUID.randomUUID(), "Sucursal Central");
+        branch.addProduct(new Product(UUID.randomUUID(), "Producto Test", 100));
+        franchise.addBranch(branch);
+
+        when(findAllFranchisesUseCase.execute(0, 10))
+                .thenReturn(Flux.just(franchise));
+
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/franchises")
+                        .queryParam("page", 0)
+                        .queryParam("size", 10)
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$[0].id").isEqualTo(id.toString())
+                .jsonPath("$[0].name").isEqualTo("Franquicia Maestra")
+                .jsonPath("$[0].branches[0].name").isEqualTo("Sucursal Central")
+                .jsonPath("$[0].branches[0].products[0].name").isEqualTo("Producto Test");
+
+        verify(findAllFranchisesUseCase).execute(0, 10);
     }
 }
