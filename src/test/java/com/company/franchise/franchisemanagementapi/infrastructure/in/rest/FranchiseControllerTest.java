@@ -1,14 +1,11 @@
-package com.company.franchise.franchisemanagementapi.infrastructure;
+package com.company.franchise.franchisemanagementapi.infrastructure.in.rest;
 
 import com.company.franchise.franchisemanagementapi.application.usecase.*;
 import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
 import com.company.franchise.franchisemanagementapi.domain.model.Product;
 import com.company.franchise.franchisemanagementapi.domain.model.TopProductByBranch;
-import com.company.franchise.franchisemanagementapi.infrastructure.in.FranchiseController;
-import com.company.franchise.franchisemanagementapi.infrastructure.in.dto.AddBranchRequest;
-import com.company.franchise.franchisemanagementapi.infrastructure.in.dto.AddProductRequest;
-import com.company.franchise.franchisemanagementapi.infrastructure.in.dto.CreateFranchiseRequest;
-import com.company.franchise.franchisemanagementapi.infrastructure.in.dto.UpdateProductStockRequest;
+import com.company.franchise.franchisemanagementapi.infrastructure.in.dto.*;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -19,7 +16,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +38,12 @@ class FranchiseControllerTest {
     private GetTopStockProductsByFranchiseUseCase getTopStockProductsByFranchiseUseCase;
     @MockitoBean
     private RemoveProductFromBranchUseCase removeProductFromBranchUseCase;
+    @MockitoBean
+    private UpdateFranchiseNameUseCase updateFranchiseNameUseCase;
+    @MockitoBean
+    private UpdateBranchNameUseCase updateBranchNameUseCase;
+    @MockitoBean
+    private UpdateProductNameUseCase updateProductNameUseCase;
 
     private final UUID fId = UUID.randomUUID();
     private final UUID bId = UUID.randomUUID();
@@ -97,17 +100,17 @@ class FranchiseControllerTest {
     void shouldUpdateProductStock() {
         UpdateProductStockRequest request = new UpdateProductStockRequest(50);
 
-        when(updateProductStockUseCase.execute(eq(fId), eq(bId), eq(pId), eq(50)))
+        when(updateProductStockUseCase.execute(any(UUID.class), any(UUID.class), any(UUID.class), anyInt()))
                 .thenReturn(Mono.empty());
 
         webTestClient.put()
                 .uri("/franchises/{fId}/branches/{bId}/products/{pId}/stock",
-                        fId.toString(), bId.toString(), pId.toString())
+                        fId, bId, pId) // No hace falta .toString(), WebTestClient lo maneja
                 .bodyValue(request)
                 .exchange()
                 .expectStatus().isOk();
 
-        verify(updateProductStockUseCase).execute(fId, bId, pId, 50);
+        verify(updateProductStockUseCase).execute(eq(fId), eq(bId), eq(pId), eq(50));
     }
 
     @Test
@@ -140,5 +143,66 @@ class FranchiseControllerTest {
                 .expectStatus().isNoContent();
 
         verify(removeProductFromBranchUseCase).execute(fId, bId, pId);
+    }
+
+    @Test
+    void shouldUpdateFranchiseName() {
+        UpdateFranchiseNameRequest request = new UpdateFranchiseNameRequest("New Franchise Name");
+
+        when(updateFranchiseNameUseCase.execute(eq(fId), eq("New Franchise Name")))
+                .thenReturn(Mono.empty());
+
+        webTestClient.put()
+                .uri("/franchises/{id}", fId.toString())
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk();
+
+        verify(updateFranchiseNameUseCase).execute(fId, "New Franchise Name");
+    }
+
+    @Test
+    void shouldUpdateBranchName() {
+        UpdateBranchNameRequest request = new UpdateBranchNameRequest("New Branch Name");
+
+        when(updateBranchNameUseCase.execute(eq(fId), eq(bId), eq("New Branch Name")))
+                .thenReturn(Mono.empty());
+
+        webTestClient.put()
+                .uri("/franchises/{fId}/branches/{bId}", fId.toString(), bId.toString())
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk();
+
+        verify(updateBranchNameUseCase).execute(fId, bId, "New Branch Name");
+    }
+
+    @Test
+    void shouldUpdateProductName() {
+        UpdateProductNameRequest request = new UpdateProductNameRequest("New Product Name");
+
+        when(updateProductNameUseCase.execute(eq(bId), eq(pId), eq("New Product Name")))
+                .thenReturn(Mono.empty());
+
+        webTestClient.put()
+                .uri("/franchises/{fId}/branches/{bId}/products/{pId}",
+                        fId.toString(), bId.toString(), pId.toString())
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk();
+
+        verify(updateProductNameUseCase).execute(bId, pId, "New Product Name");
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenNameIsBlank() {
+        UpdateProductNameRequest request = new UpdateProductNameRequest("");
+
+        webTestClient.put()
+                .uri("/franchises/{fId}/branches/{bId}/products/{pId}",
+                        fId.toString(), bId.toString(), pId.toString())
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 }

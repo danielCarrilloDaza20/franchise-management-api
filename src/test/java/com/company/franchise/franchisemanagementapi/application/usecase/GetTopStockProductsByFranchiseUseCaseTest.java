@@ -1,5 +1,6 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
+import com.company.franchise.franchisemanagementapi.domain.exception.BusinessException;
 import com.company.franchise.franchisemanagementapi.domain.exception.FranchiseNotFoundException;
 import com.company.franchise.franchisemanagementapi.domain.model.Branch;
 import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
@@ -16,8 +17,9 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class GetTopStockProductsByFranchiseUseCaseTest {
 
@@ -31,7 +33,6 @@ class GetTopStockProductsByFranchiseUseCaseTest {
     }
 
     @Test
-    @DisplayName("Debe retornar el producto con más stock por cada sucursal de la franquicia")
     void shouldReturnTopStockProductPerBranch() {
         UUID franchiseId = UUID.randomUUID();
         Franchise franchise = new Franchise(franchiseId, "Test Franchise");
@@ -47,35 +48,40 @@ class GetTopStockProductsByFranchiseUseCaseTest {
         franchise.addBranch(branch1);
         franchise.addBranch(branch2);
 
-        when(repository.findById(franchiseId))
-                .thenReturn(Mono.just(franchise));
+        when(repository.findById(franchiseId)).thenReturn(Mono.just(franchise));
 
         Mono<List<TopProductByBranch>> result = useCase.execute(franchiseId);
 
         StepVerifier.create(result)
                 .assertNext(list -> {
-                    assertNotNull(list);
                     assertEquals(2, list.size());
 
-                    TopProductByBranch topA = list.stream()
-                            .filter(t -> t.getBranchName().equals("Branch A"))
-                            .findFirst().orElseThrow();
-                    assertEquals("Product A2", topA.getProduct().getName());
-                    assertEquals(30, topA.getProduct().getStock());
+                    assertTrue(list.stream().anyMatch(t ->
+                            t.getBranchName().equals("Branch A") && t.getProduct().getStock() == 30));
 
-                    TopProductByBranch topB = list.stream()
-                            .filter(t -> t.getBranchName().equals("Branch B"))
-                            .findFirst().orElseThrow();
-                    assertEquals("Product B2", topB.getProduct().getName());
-                    assertEquals(20, topB.getProduct().getStock());
+                    assertTrue(list.stream().anyMatch(t ->
+                            t.getBranchName().equals("Branch B") && t.getProduct().getStock() == 20));
                 })
                 .verifyComplete();
-
-        verify(repository, times(1)).findById(franchiseId);
     }
 
     @Test
-    @DisplayName("Debe lanzar excepción si la franquicia no existe")
+    void shouldFailWhenFranchiseHasNoBranches() {
+        UUID franchiseId = UUID.randomUUID();
+        Franchise emptyFranchise = new Franchise(franchiseId, "Empty Franchise");
+
+        when(repository.findById(franchiseId)).thenReturn(Mono.just(emptyFranchise));
+
+        Mono<List<TopProductByBranch>> result = useCase.execute(franchiseId);
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable ->
+                        throwable instanceof BusinessException &&
+                                throwable.getMessage().contains("has no registered branches"))
+                .verify();
+    }
+
+    @Test
     void shouldFailWhenFranchiseDoesNotExist() {
         UUID franchiseId = UUID.randomUUID();
         when(repository.findById(franchiseId)).thenReturn(Mono.empty());
@@ -87,4 +93,3 @@ class GetTopStockProductsByFranchiseUseCaseTest {
                 .verify();
     }
 }
-

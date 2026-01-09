@@ -9,6 +9,8 @@ import com.company.franchise.franchisemanagementapi.infrastructure.out.persisten
 import com.company.franchise.franchisemanagementapi.infrastructure.out.persistence.repository.ProductR2dbcRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.data.relational.core.query.Criteria;
+import org.springframework.data.relational.core.query.Query;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -95,6 +97,14 @@ public class FranchiseRepositoryAdapter implements FranchiseRepository {
         FranchiseEntity entity = mapper.toEntity(franchise);
         return franchiseRepository.save(entity)
                 .map(mapper::toDomainFranchiseWithoutBranches);
+    }
+
+    @Override
+    public Mono<Boolean> existsByName(String name) {
+        return r2dbcEntityTemplate.select(FranchiseEntity.class)
+                .from("franchises")
+                .matching(Query.query(Criteria.where("name").is(name)))
+                .exists();
     }
 }
 

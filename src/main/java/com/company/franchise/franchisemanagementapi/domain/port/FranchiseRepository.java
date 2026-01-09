@@ -15,4 +15,6 @@ public interface FranchiseRepository {
     Mono<Franchise> findById(UUID id);
 
     Flux<Franchise> findAll(Pageable pageable);
+
+    Mono<Boolean> existsByName(String name);
 }

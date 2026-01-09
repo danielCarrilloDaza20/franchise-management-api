@@ -1,5 +1,6 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
+import com.company.franchise.franchisemanagementapi.domain.exception.BusinessException;
 import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
 import com.company.franchise.franchisemanagementapi.domain.port.FranchiseRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,25 +26,39 @@ class CreateFranchiseUseCaseTest {
     }
 
     @Test
-    @DisplayName("Debe invocar el método create del repositorio al generar una nueva franquicia")
     void shouldCreateFranchiseSuccessfully() {
-        String franchiseName = "Test Franchise";
-
+        String name = "Test Franchise";
+        when(repository.existsByName(name)).thenReturn(Mono.just(false));
         when(repository.create(any(Franchise.class)))
-                .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+                .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 
-        Mono<Franchise> result = useCase.execute(franchiseName);
+        Mono<Franchise> result = useCase.execute(name);
 
         StepVerifier.create(result)
                 .assertNext(franchise -> {
-                    assertNotNull(franchise);
-                    assertEquals(franchiseName, franchise.getName());
-                    assertNotNull(franchise.getId()); // El dominio ya le puso ID
+                    assertEquals(name, franchise.getName());
+                    assertNotNull(franchise.getId());
                 })
                 .verifyComplete();
 
-        verify(repository, times(1)).create(any(Franchise.class));
+        verify(repository).existsByName(name);
+        verify(repository).create(any(Franchise.class));
+    }
 
+    @Test
+    void shouldThrowExceptionWhenNameExists() {
+        String name = "Existing Franchise";
+        when(repository.existsByName(name)).thenReturn(Mono.just(true));
+
+        Mono<Franchise> result = useCase.execute(name);
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable ->
+                        throwable instanceof BusinessException &&
+                                throwable.getMessage().contains("There is already a franchise"))
+                .verify();
+
+        verify(repository).existsByName(name);
+        verify(repository, never()).create(any(Franchise.class));
     }
 }
-

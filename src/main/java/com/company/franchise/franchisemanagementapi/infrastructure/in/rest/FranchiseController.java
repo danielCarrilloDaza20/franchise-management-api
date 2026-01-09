@@ -1,7 +1,8 @@
-package com.company.franchise.franchisemanagementapi.infrastructure.in;
+package com.company.franchise.franchisemanagementapi.infrastructure.in.rest;
 
 import com.company.franchise.franchisemanagementapi.application.usecase.*;
 import com.company.franchise.franchisemanagementapi.infrastructure.in.dto.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,7 @@ public class FranchiseController {
 
     @PostMapping
     public Mono<ResponseEntity<Void>> createFranchise(
-            @RequestBody CreateFranchiseRequest request) {
+            @Valid @RequestBody CreateFranchiseRequest request) {
 
         return createFranchiseUseCase.execute(request.getName())
                 .thenReturn(ResponseEntity.status(HttpStatus.CREATED).build());
@@ -37,7 +38,7 @@ public class FranchiseController {
     @PostMapping("/{franchiseId}/branches")
     public Mono<ResponseEntity<Void>> addBranch(
             @PathVariable UUID franchiseId,
-            @RequestBody AddBranchRequest request) {
+            @Valid @RequestBody AddBranchRequest request) {
 
         return addBranchToFranchiseUseCase
                 .execute(franchiseId, request.getName())
@@ -48,7 +49,7 @@ public class FranchiseController {
     public Mono<ResponseEntity<Void>> addProduct(
             @PathVariable UUID franchiseId,
             @PathVariable UUID branchId,
-            @RequestBody AddProductRequest request) {
+            @Valid @RequestBody AddProductRequest request) {
 
         return addProductToBranchUseCase.execute(
                         franchiseId,
@@ -64,7 +65,7 @@ public class FranchiseController {
             @PathVariable UUID franchiseId,
             @PathVariable UUID branchId,
             @PathVariable UUID productId,
-            @RequestBody UpdateProductStockRequest request) {
+            @Valid @RequestBody UpdateProductStockRequest request) {
 
         return updateProductStockUseCase.execute(
                         franchiseId,
@@ -106,7 +107,7 @@ public class FranchiseController {
     @PutMapping("/{franchiseId}")
     public Mono<ResponseEntity<Void>> updateFranchiseName(
             @PathVariable UUID franchiseId,
-            @RequestBody UpdateFranchiseNameRequest request) {
+            @Valid @RequestBody UpdateFranchiseNameRequest request) {
 
         return updateFranchiseNameUseCase.execute(franchiseId, request.getName())
                 .thenReturn(ResponseEntity.ok().build());
@@ -116,7 +117,7 @@ public class FranchiseController {
     public Mono<ResponseEntity<Void>> updateBranchName(
             @PathVariable UUID franchiseId,
             @PathVariable UUID branchId,
-            @RequestBody UpdateBranchNameRequest request) {
+            @Valid @RequestBody UpdateBranchNameRequest request) {
 
         return updateBranchNameUseCase.execute(franchiseId, branchId, request.getName())
                 .thenReturn(ResponseEntity.ok().build());
@@ -127,7 +128,7 @@ public class FranchiseController {
             @PathVariable UUID franchiseId,
             @PathVariable UUID branchId,
             @PathVariable UUID productId,
-            @RequestBody UpdateProductNameRequest request) {
+            @Valid @RequestBody UpdateProductNameRequest request) {
 
         return updateProductNameUseCase.execute(branchId, productId, request.getName())
                 .thenReturn(ResponseEntity.ok().build());

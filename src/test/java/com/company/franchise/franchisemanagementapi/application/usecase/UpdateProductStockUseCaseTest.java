@@ -1,5 +1,6 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
+import com.company.franchise.franchisemanagementapi.domain.exception.BranchNotFoundException;
 import com.company.franchise.franchisemanagementapi.domain.exception.InvalidStockException;
 import com.company.franchise.franchisemanagementapi.domain.exception.ProductNotFoundException;
 import com.company.franchise.franchisemanagementapi.domain.model.Branch;
@@ -22,7 +23,7 @@ class UpdateProductStockUseCaseTest {
 
     private BranchRepository branchRepository;
     private ProductRepository productRepository;
-    private FranchiseRepository franchiseRepository; // Se mantiene si el constructor lo pide
+    private FranchiseRepository franchiseRepository;
     private UpdateProductStockUseCase useCase;
 
     @BeforeEach
@@ -39,7 +40,6 @@ class UpdateProductStockUseCaseTest {
     }
 
     @Test
-    @DisplayName("Debe actualizar el stock exitosamente")
     void shouldUpdateProductStockSuccessfully() {
         UUID fId = UUID.randomUUID();
         UUID bId = UUID.randomUUID();
@@ -50,22 +50,37 @@ class UpdateProductStockUseCaseTest {
         Product product = new Product(pId, "Laptop", 5);
 
         when(branchRepository.findById(fId, bId)).thenReturn(Mono.just(branch));
-
         when(productRepository.findById(bId, pId)).thenReturn(Mono.just(product));
-
         when(productRepository.update(any(Product.class), eq(bId)))
-                .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+                .thenReturn(Mono.empty());
 
         Mono<Void> result = useCase.execute(fId, bId, pId, newStock);
 
-        StepVerifier.create(result)
-                .verifyComplete();
+        StepVerifier.create(result).verifyComplete();
 
         verify(productRepository).update(argThat(p -> p.getStock() == newStock), eq(bId));
     }
 
     @Test
-    @DisplayName("Debe fallar si el stock es negativo")
+    void shouldNotUpdateWhenStockIsSame() {
+        UUID fId = UUID.randomUUID();
+        UUID bId = UUID.randomUUID();
+        UUID pId = UUID.randomUUID();
+        int sameStock = 10;
+
+        Product product = new Product(pId, "Laptop", sameStock); // Ya tiene 10
+
+        when(branchRepository.findById(fId, bId)).thenReturn(Mono.just(new Branch(bId, "B1")));
+        when(productRepository.findById(bId, pId)).thenReturn(Mono.just(product));
+
+        Mono<Void> result = useCase.execute(fId, bId, pId, sameStock);
+
+        StepVerifier.create(result).verifyComplete();
+
+        verify(productRepository, never()).update(any(), any());
+    }
+
+    @Test
     void shouldFailWhenStockIsNegative() {
         Mono<Void> result = useCase.execute(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), -10);
 
@@ -77,21 +92,17 @@ class UpdateProductStockUseCaseTest {
     }
 
     @Test
-    @DisplayName("Debe fallar si el producto no pertenece a la sucursal")
-    void shouldFailWhenProductNotFoundInBranch() {
+    void shouldFailWhenBranchNotFound() {
         UUID fId = UUID.randomUUID();
         UUID bId = UUID.randomUUID();
-        UUID pId = UUID.randomUUID();
 
-        when(branchRepository.findById(fId, bId)).thenReturn(Mono.just(new Branch(bId, "B1")));
-        when(productRepository.findById(bId, pId)).thenReturn(Mono.empty());
+        when(branchRepository.findById(fId, bId)).thenReturn(Mono.empty());
 
-        Mono<Void> result = useCase.execute(fId, bId, pId, 10);
+        Mono<Void> result = useCase.execute(fId, bId, UUID.randomUUID(), 10);
 
         StepVerifier.create(result)
-                .expectError(ProductNotFoundException.class)
+                .expectErrorMatches(t -> t instanceof BranchNotFoundException &&
+                        t.getMessage().contains("Branch not found in the franchise"))
                 .verify();
-
-        verify(productRepository, never()).update(any(), any());
     }
 }

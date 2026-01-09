@@ -1,7 +1,7 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
+import com.company.franchise.franchisemanagementapi.domain.exception.BusinessException;
 import com.company.franchise.franchisemanagementapi.domain.exception.FranchiseNotFoundException;
-import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
 import com.company.franchise.franchisemanagementapi.domain.model.TopProductByBranch;
 import com.company.franchise.franchisemanagementapi.domain.port.FranchiseRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,12 @@ public class GetTopStockProductsByFranchiseUseCase {
 
     public Mono<List<TopProductByBranch>> execute(UUID franchiseId) {
         return repository.findById(franchiseId)
-                .switchIfEmpty(Mono.error(new FranchiseNotFoundException("Franchise not found with id: " + franchiseId)))
-                .map(Franchise::getTopStockProductsByBranch);
+                .switchIfEmpty(Mono.error(new FranchiseNotFoundException(franchiseId)))
+                .map(franchise -> {
+                    if (franchise.getBranches().isEmpty()) {
+                        throw new BusinessException("The franchise has no registered branches.");
+                    }
+                    return franchise.getTopStockProductsByBranch();
+                });
     }
 }

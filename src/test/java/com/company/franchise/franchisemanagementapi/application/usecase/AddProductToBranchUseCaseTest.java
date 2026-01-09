@@ -1,6 +1,7 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
 import com.company.franchise.franchisemanagementapi.domain.exception.BranchNotFoundException;
+import com.company.franchise.franchisemanagementapi.domain.exception.BusinessException;
 import com.company.franchise.franchisemanagementapi.domain.exception.InvalidStockException;
 import com.company.franchise.franchisemanagementapi.domain.model.Branch;
 import com.company.franchise.franchisemanagementapi.domain.model.Product;
@@ -30,48 +31,61 @@ class AddProductToBranchUseCaseTest {
     }
 
     @Test
-    @DisplayName("Debe agregar un producto exitosamente a una sucursal existente")
     void shouldAddProductToBranchSuccessfully() {
-        UUID franchiseId = UUID.randomUUID();
-        UUID branchId = UUID.randomUUID();
-        String productName = "Laptop";
+        // GIVEN
+        UUID fId = UUID.randomUUID();
+        UUID bId = UUID.randomUUID();
+        String pName = "Laptop";
         int stock = 10;
+        Branch branch = new Branch(bId, "Test Branch");
 
-        Branch branch = new Branch(branchId, "Test Branch");
+        when(branchRepository.findById(fId, bId)).thenReturn(Mono.just(branch));
+        when(productRepository.existsByNameInBranch(pName, bId)).thenReturn(Mono.just(false));
+        when(productRepository.create(any(Product.class), eq(bId)))
+                .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 
-        when(branchRepository.findById(franchiseId, branchId))
-                .thenReturn(Mono.just(branch));
+        Mono<Void> result = useCase.execute(fId, bId, pName, stock);
 
-        when(productRepository.create(any(Product.class), eq(branchId)))
-                .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+        StepVerifier.create(result).verifyComplete();
 
-        Mono<Void> result = useCase.execute(franchiseId, branchId, productName, stock);
-
-        StepVerifier.create(result)
-                .verifyComplete();
-
-        verify(branchRepository, times(1)).findById(franchiseId, branchId);
-        verify(productRepository, times(1)).create(any(Product.class), eq(branchId));
+        verify(branchRepository).findById(fId, bId);
+        verify(productRepository).existsByNameInBranch(pName, bId);
+        verify(productRepository).create(any(Product.class), eq(bId));
     }
 
     @Test
-    @DisplayName("Debe lanzar error si el stock es negativo")
-    void shouldReturnErrorWhenStockIsNegative() {
-        UUID franchiseId = UUID.randomUUID();
-        UUID branchId = UUID.randomUUID();
+    void shouldThrowExceptionWhenProductAlreadyExists() {
+        UUID fId = UUID.randomUUID();
+        UUID bId = UUID.randomUUID();
+        String pName = "Laptop";
+        Branch branch = new Branch(bId, "Test Branch");
 
-        Mono<Void> result = useCase.execute(franchiseId, branchId, "Invalid Product", -5);
+        when(branchRepository.findById(fId, bId)).thenReturn(Mono.just(branch));
+        when(productRepository.existsByNameInBranch(pName, bId)).thenReturn(Mono.just(true));
+
+        Mono<Void> result = useCase.execute(fId, bId, pName, 10);
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable ->
+                        throwable instanceof BusinessException &&
+                                throwable.getMessage().contains("already exists in the branch"))
+                .verify();
+
+        verify(productRepository, never()).create(any(), any());
+    }
+
+    @Test
+    void shouldReturnErrorWhenStockIsNegative() {
+        Mono<Void> result = useCase.execute(UUID.randomUUID(), UUID.randomUUID(), "Product", -5);
 
         StepVerifier.create(result)
                 .expectError(InvalidStockException.class)
                 .verify();
 
         verify(branchRepository, never()).findById(any(), any());
-        verify(productRepository, never()).create(any(), any());
     }
 
     @Test
-    @DisplayName("Debe lanzar error si la sucursal no existe")
     void shouldReturnErrorWhenBranchNotFound() {
         UUID fId = UUID.randomUUID();
         UUID bId = UUID.randomUUID();
@@ -82,5 +96,7 @@ class AddProductToBranchUseCaseTest {
         StepVerifier.create(result)
                 .expectError(BranchNotFoundException.class)
                 .verify();
+
+        verify(productRepository, never()).existsByNameInBranch(any(), any());
     }
 }

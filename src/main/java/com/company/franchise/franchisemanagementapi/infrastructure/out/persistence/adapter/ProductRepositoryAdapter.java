@@ -10,7 +10,6 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -54,5 +53,16 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 ))
                 .all()
                 .then();
+    }
+
+    @Override
+    public Mono<Boolean> existsByNameInBranch(String name, UUID branchId) {
+        return r2dbcEntityTemplate.select(ProductEntity.class)
+                .from("products")
+                .matching(Query.query(
+                        Criteria.where("name").is(name)
+                                .and("branch_id").is(branchId)
+                ))
+                .exists();
     }
 }

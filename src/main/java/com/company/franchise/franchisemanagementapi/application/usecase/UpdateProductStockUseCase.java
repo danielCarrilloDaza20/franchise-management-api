@@ -21,22 +21,19 @@ public class UpdateProductStockUseCase {
     private final ProductRepository productRepository;
 
     public Mono<Void> execute(UUID franchiseId, UUID branchId, UUID productId, int newStock) {
-        if (newStock < 0) {
-            return Mono.error(new InvalidStockException(newStock));
-        }
+        if (newStock < 0) return Mono.error(new InvalidStockException(newStock));
 
         return branchRepository.findById(franchiseId, branchId)
-                .switchIfEmpty(Mono.error(
-                        new BranchNotFoundException("Franchise not found: " + franchiseId)
-                )).flatMap(branch -> productRepository.findById(branchId, productId)
-                        .switchIfEmpty(Mono.error(
-                                new ProductNotFoundException(branchId, productId)
-                        ))
+                .switchIfEmpty(Mono.error(new BranchNotFoundException("Branch not found in the franchise: " + franchiseId)))
+                .flatMap(branch -> productRepository.findById(branchId, productId)
+                        .switchIfEmpty(Mono.error(new ProductNotFoundException(branchId, productId)))
                         .flatMap(product -> {
+                            if (product.getStock() == newStock) {
+                                return Mono.empty();
+                            }
                             product.updateStock(newStock);
                             return productRepository.update(product, branchId);
                         })
-
                 )
                 .then();
     }

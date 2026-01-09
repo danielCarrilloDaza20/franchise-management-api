@@ -1,7 +1,9 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
+import com.company.franchise.franchisemanagementapi.domain.exception.BusinessException;
 import com.company.franchise.franchisemanagementapi.domain.exception.ProductNotFoundException;
 import com.company.franchise.franchisemanagementapi.domain.model.Product;
+import com.company.franchise.franchisemanagementapi.domain.port.BranchRepository;
 import com.company.franchise.franchisemanagementapi.domain.port.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,45 +19,62 @@ import static org.mockito.Mockito.*;
 class RemoveProductFromBranchUseCaseTest {
 
     private ProductRepository productRepository;
+    private BranchRepository branchRepository;
     private RemoveProductFromBranchUseCase useCase;
 
     @BeforeEach
     void setUp() {
         productRepository = mock(ProductRepository.class);
-        useCase = new RemoveProductFromBranchUseCase(productRepository);
+        branchRepository = mock(BranchRepository.class);
+        useCase = new RemoveProductFromBranchUseCase(productRepository, branchRepository);
     }
 
     @Test
-    @DisplayName("Debe eliminar un producto exitosamente si existe en la sucursal")
     void shouldRemoveProductFromBranchSuccessfully() {
-        UUID franchiseId = UUID.randomUUID();
-        UUID branchId = UUID.randomUUID();
-        UUID productId = UUID.randomUUID();
+        UUID fId = UUID.randomUUID();
+        UUID bId = UUID.randomUUID();
+        UUID pId = UUID.randomUUID();
+        Product product = new Product(pId, "Laptop", 10);
 
-        Product product = new Product(productId, "Laptop", 10);
+        when(branchRepository.existsInFranchise(bId, fId)).thenReturn(Mono.just(true));
+        when(productRepository.findById(bId, pId)).thenReturn(Mono.just(product));
+        when(productRepository.deleteById(bId, pId)).thenReturn(Mono.empty());
 
-        when(productRepository.findById(branchId, productId))
-                .thenReturn(Mono.just(product));
+        Mono<Void> result = useCase.execute(fId, bId, pId);
 
-        when(productRepository.deleteById(branchId, productId))
-                .thenReturn(Mono.empty()); // delete habitualmente retorna Mono<Void>
+        StepVerifier.create(result).verifyComplete();
 
-        Mono<Void> result = useCase.execute(franchiseId, branchId, productId);
+        verify(branchRepository).existsInFranchise(bId, fId);
+        verify(productRepository).deleteById(bId, pId);
+    }
+
+    @Test
+    void shouldFailWhenBranchDoesNotBelongToFranchise() {
+        UUID fId = UUID.randomUUID();
+        UUID bId = UUID.randomUUID();
+        UUID pId = UUID.randomUUID();
+
+        when(branchRepository.existsInFranchise(bId, fId)).thenReturn(Mono.just(false));
+
+        Mono<Void> result = useCase.execute(fId, bId, pId);
 
         StepVerifier.create(result)
-                .verifyComplete();
+                .expectErrorMatches(throwable ->
+                        throwable instanceof BusinessException &&
+                                throwable.getMessage().contains("does not belong to the indicated franchise"))
+                .verify();
 
-        verify(productRepository, times(1)).findById(branchId, productId);
-        verify(productRepository, times(1)).deleteById(branchId, productId);
+        verify(productRepository, never()).findById(any(), any());
+        verify(productRepository, never()).deleteById(any(), any());
     }
 
     @Test
-    @DisplayName("Debe lanzar error si el producto no existe en la sucursal")
     void shouldReturnErrorWhenProductNotFound() {
         UUID fId = UUID.randomUUID();
         UUID bId = UUID.randomUUID();
         UUID pId = UUID.randomUUID();
 
+        when(branchRepository.existsInFranchise(bId, fId)).thenReturn(Mono.just(true));
         when(productRepository.findById(bId, pId)).thenReturn(Mono.empty());
 
         Mono<Void> result = useCase.execute(fId, bId, pId);

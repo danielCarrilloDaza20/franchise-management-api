@@ -1,5 +1,7 @@
 package com.company.franchise.franchisemanagementapi.infrastructure.in.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,5 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AddBranchRequest {
+    @NotBlank(message = "Name couldn't be empty.")
+    @Size(min = 3, max = 50)
     private String name;
 }

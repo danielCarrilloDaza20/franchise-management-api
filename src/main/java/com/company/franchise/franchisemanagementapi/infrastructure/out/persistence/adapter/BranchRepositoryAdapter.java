@@ -9,8 +9,9 @@ import com.company.franchise.franchisemanagementapi.infrastructure.out.persisten
 import com.company.franchise.franchisemanagementapi.infrastructure.out.persistence.repository.ProductR2dbcRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.data.relational.core.query.Criteria;
+import org.springframework.data.relational.core.query.Query;
 import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -54,5 +55,27 @@ public class BranchRepositoryAdapter implements BranchRepository {
 
         return branchR2dbcRepository.save(entity)
                 .map(mapper::toDomainBranchWithoutProducts);
+    }
+
+    @Override
+    public Mono<Boolean> existsByNameInFranchise(String name, UUID franchiseId) {
+        return r2dbcEntityTemplate.select(BranchEntity.class)
+                .from("branches")
+                .matching(Query.query(
+                        Criteria.where("name").is(name)
+                                .and("franchise_id").is(franchiseId)
+                ))
+                .exists();
+    }
+
+    @Override
+    public Mono<Boolean> existsInFranchise(UUID branchId, UUID franchiseId) {
+        return r2dbcEntityTemplate.select(BranchEntity.class)
+                .from("branches")
+                .matching(Query.query(
+                        Criteria.where("id").is(branchId)
+                                .and("franchise_id").is(franchiseId)
+                ))
+                .exists();
     }
 }

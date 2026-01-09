@@ -1,5 +1,6 @@
 package com.company.franchise.franchisemanagementapi.application.usecase;
 
+import com.company.franchise.franchisemanagementapi.domain.exception.BusinessException;
 import com.company.franchise.franchisemanagementapi.domain.exception.FranchiseNotFoundException;
 import com.company.franchise.franchisemanagementapi.domain.model.Branch;
 import com.company.franchise.franchisemanagementapi.domain.model.Franchise;
@@ -13,7 +14,6 @@ import reactor.test.StepVerifier;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 class AddBranchToFranchiseUseCaseTest {
@@ -29,45 +29,58 @@ class AddBranchToFranchiseUseCaseTest {
     }
 
     @Test
-    @DisplayName("Debe agregar una sucursal exitosamente a una franquicia existente")
-    void shouldCreateAndSaveBranchToFranchise() {
+    void shouldCreateAndSaveBranchSuccessfully() {
         UUID franchiseId = UUID.randomUUID();
         String branchName = "New Branch";
         Franchise franchise = new Franchise(franchiseId, "Test Franchise");
 
-        when(franchiseRepository.findById(franchiseId))
-                .thenReturn(Mono.just(franchise));
-
+        when(franchiseRepository.findById(franchiseId)).thenReturn(Mono.just(franchise));
+        when(branchRepository.existsByNameInFranchise(branchName, franchiseId)).thenReturn(Mono.just(false));
         when(branchRepository.create(any(Branch.class), eq(franchiseId)))
-                .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+                .thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+        Mono<Void> result = useCase.execute(franchiseId, branchName);
+
+        StepVerifier.create(result).verifyComplete();
+
+        verify(franchiseRepository).findById(franchiseId);
+        verify(branchRepository).existsByNameInFranchise(branchName, franchiseId);
+        verify(branchRepository).create(any(Branch.class), eq(franchiseId));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenBranchNameExists() {
+        UUID franchiseId = UUID.randomUUID();
+        String branchName = "Existing Branch";
+        Franchise franchise = new Franchise(franchiseId, "Test Franchise");
+
+        when(franchiseRepository.findById(franchiseId)).thenReturn(Mono.just(franchise));
+        when(branchRepository.existsByNameInFranchise(branchName, franchiseId)).thenReturn(Mono.just(true));
 
         Mono<Void> result = useCase.execute(franchiseId, branchName);
 
         StepVerifier.create(result)
-                .verifyComplete();
+                .expectErrorMatches(throwable ->
+                        throwable instanceof BusinessException &&
+                                throwable.getMessage().contains("already has a branch called"))
+                .verify();
 
-        verify(franchiseRepository, times(1)).findById(franchiseId);
-        verify(branchRepository, times(1)).create(any(Branch.class), eq(franchiseId));
-
-        assertEquals(1, franchise.getBranches().size());
-        assertEquals(branchName, franchise.getBranches().get(0).getName());
+        verify(branchRepository).existsByNameInFranchise(branchName, franchiseId);
+        verify(branchRepository, never()).create(any(), any());
     }
 
     @Test
-    @DisplayName("Debe lanzar error si la franquicia no existe")
     void shouldReturnErrorWhenFranchiseNotFound() {
-        // GIVEN
         UUID franchiseId = UUID.randomUUID();
-        when(franchiseRepository.findById(any(UUID.class))).thenReturn(Mono.empty());
+        when(franchiseRepository.findById(franchiseId)).thenReturn(Mono.empty());
 
-        // WHEN
         Mono<Void> result = useCase.execute(franchiseId, "Any Branch");
 
-        // THEN
         StepVerifier.create(result)
                 .expectError(FranchiseNotFoundException.class)
                 .verify();
 
+        verify(branchRepository, never()).existsByNameInFranchise(any(), any());
         verify(branchRepository, never()).create(any(), any());
     }
 }
