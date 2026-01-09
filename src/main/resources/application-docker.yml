@@ -1,0 +1,14 @@
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://db:5432/franchise_db
+    username: postgres
+    password: admin
+  
+  sql:
+    init:
+      mode: always
+      platform: postgres
+
+logging:
+  level:
+    org.springframework.r2dbc: DEBUG
